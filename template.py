@@ -4,33 +4,43 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]: %(message)s:')
 
+# ==============================================================================
+# MINIMAL STRUCTURE - RAG CHAT ONLY (Pinecone DB already exists)
+# ==============================================================================
 
 list_of_files = [
+    # Core source code
     "src/__init__.py",
-    "src/helper.py",
-    "src/prompt.py",
-    ".env",
+    "src/config.py",           # Configuration & API keys
+    "src/helper.py",           # RAG functions (retriever, chat)
+    "src/prompt.py",           # Prompt template
+    
+    # Main application
+    "app.py",                  # Streamlit/Gradio chat interface
+    
+    # Setup
     "setup.py",
-    "app.py",
+    "requirements.txt",
+    
+    # Research (preserve old work)
     "research/trials.ipynb",
-   " test.py"
+    "research/old_implementation.ipynb",
 ]
-
 
 for filepath in list_of_files:
     filepath = Path(filepath)
     filedir, filename = os.path.split(filepath)
-
-
-    if filedir !="":
+    
+    if filedir != "":
         os.makedirs(filedir, exist_ok=True)
-        logging.info(f"Creating directory; {filedir} for the file: {filename}")
-
+        logging.info(f"Creating directory: {filedir} for the file: {filename}")
+    
     if (not os.path.exists(filepath)) or (os.path.getsize(filepath) == 0):
         with open(filepath, "w") as f:
-            pass
-            logging.info(f"Creating empty file: {filepath}")
-
-
+            pass  # Create empty file
+        
+        logging.info(f"Creating empty file: {filepath}")
     else:
-        logging.info(f"{filename} is already exists")
+        logging.info(f"{filename} already exists")
+
+
