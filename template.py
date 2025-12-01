@@ -4,9 +4,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s]: %(message)s:')
 
-# ==============================================================================
-# MINIMAL STRUCTURE - RAG CHAT ONLY (Pinecone DB already exists)
-# ==============================================================================
 
 list_of_files = [
     # Core source code

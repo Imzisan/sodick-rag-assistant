@@ -6,7 +6,7 @@ Contains retriever setup and chat functionality
 from typing import List
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_pinecone import Pinecone
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables import RunnableMap
@@ -19,6 +19,7 @@ from src.config import (
     EMBEDDING_MODEL_NAME,
     EMBEDDING_MODEL_KWARGS,
     EMBEDDING_ENCODE_KWARGS,
+    LLM_MODEL,
     LLM_TEMPERATURE,
     LLM_MAX_TOKENS,
     RETRIEVAL_SEARCH_TYPE,
@@ -29,15 +30,12 @@ from src.config import (
 # Import prompt
 from src.prompt import SYSTEM_PROMPT
 
-# =============================================================================
 # GLOBAL CHAT HISTORY
-# =============================================================================
 chat_history: List = []
 
 
-# =============================================================================
 # INITIALIZE EMBEDDINGS
-# =============================================================================
+
 def get_embeddings():
     """
     Initialize and return HuggingFace embeddings model
@@ -50,13 +48,12 @@ def get_embeddings():
         cache_folder=None,
     )
 
-    print(f"✅ Embeddings loaded: {EMBEDDING_MODEL_NAME}")
+    print(f"Embeddings loaded: {EMBEDDING_MODEL_NAME}")
     return embeddings
 
 
-# =============================================================================
 # INITIALIZE RETRIEVER
-# =============================================================================
+
 def get_retriever():
     """
     Connect to existing Pinecone index and return retriever
@@ -73,30 +70,28 @@ def get_retriever():
         search_type=RETRIEVAL_SEARCH_TYPE, search_kwargs={"k": RETRIEVAL_TOP_K}
     )
 
-    print(f"✅ Connected to Pinecone index: {INDEX_NAME}")
+    print(f"Connected to Pinecone index: {INDEX_NAME}")
     print(
-        f"✅ Retriever configured: Top-{RETRIEVAL_TOP_K} {RETRIEVAL_SEARCH_TYPE} search\n"
+        f"Retriever configured: Top-{RETRIEVAL_TOP_K} {RETRIEVAL_SEARCH_TYPE} search\n"
     )
 
     return retriever
 
 
-# =============================================================================
 # INITIALIZE LLM
-# =============================================================================
+
 def get_llm():
     """Initialize OpenAI LLM"""
-    llm = OpenAI(temperature=LLM_TEMPERATURE, max_tokens=LLM_MAX_TOKENS)
+    llm = ChatOpenAI(model=LLM_MODEL ,temperature=LLM_TEMPERATURE, max_tokens=LLM_MAX_TOKENS)
 
     print(
-        f"✅ LLM initialized: OpenAI (temp={LLM_TEMPERATURE}, max_tokens={LLM_MAX_TOKENS})"
+        f"LLM initialized: OpenAI (temp={LLM_TEMPERATURE}, max_tokens={LLM_MAX_TOKENS})"
     )
     return llm
 
 
-# =============================================================================
 # BUILD RAG CHAIN
-# =============================================================================
+
 def build_rag_chain():
     """
     Build the complete RAG chain with chat history support
@@ -132,7 +127,7 @@ def build_rag_chain():
         | llm
     )
 
-    print("✅ RAG chain built successfully\n")
+    print("RAG chain built successfully\n")
     return rag_chain
 
 
@@ -148,9 +143,8 @@ def get_rag_chain():
     return _rag_chain
 
 
-# =============================================================================
 # CHAT FUNCTION WITH HISTORY
-# =============================================================================
+
 def chat(question: str) -> str:
     """
     Chat with the RAG system with conversation history
@@ -165,11 +159,11 @@ def chat(question: str) -> str:
 
     rag_chain = get_rag_chain()
 
-    # Invoke RAG chain with chat history
+    # Invoke RAG chain with chat history (limit to last 10 messages)
     result = rag_chain.invoke(
         {
             "question": question,
-            "chat_history": chat_history[-MAX_CHAT_HISTORY:],  # Only last N messages
+            "chat_history": chat_history[-MAX_CHAT_HISTORY:],
         }
     )
 
@@ -186,14 +180,13 @@ def chat(question: str) -> str:
     return response_content
 
 
-# =============================================================================
 # CHAT HISTORY MANAGEMENT
-# =============================================================================
+
 def clear_history():
     """Clear chat history"""
     global chat_history
     chat_history = []
-    print("✅ Chat history cleared")
+    print("Chat history cleared")
 
 
 def view_history():
@@ -201,14 +194,14 @@ def view_history():
     global chat_history
 
     if not chat_history:
-        print("📭 No chat history yet")
+        print("No chat history yet")
         return
 
-    print(f"\n📜 Chat History ({len(chat_history)} messages):")
+    print(f"\nChat History ({len(chat_history)} messages):")
     print("=" * 70)
 
     for i, msg in enumerate(chat_history):
-        role = "👤 User" if isinstance(msg, HumanMessage) else "🤖 Assistant"
+        role = "User" if isinstance(msg, HumanMessage) else "Assistant"
         content = msg.content[:100] + "..." if len(msg.content) > 100 else msg.content
         print(f"{i + 1}. {role}: {content}")
 
@@ -225,9 +218,7 @@ def get_history() -> List:
     return chat_history
 
 
-# =============================================================================
 # GENERATE FOLLOW-UP QUESTIONS
-# =============================================================================
 def generate_followup_questions(last_question: str, last_answer: str) -> List[str]:
     """
     Generate contextual follow-up questions based on the conversation
@@ -267,9 +258,12 @@ Now generate 5 follow-up questions:"""
 
     try:
         result = llm.invoke(followup_prompt)
-
+        
+        #: Extract content from AIMessage object
+        response_text = result.content if hasattr(result, 'content') else str(result)
+        
         # Parse the response
-        lines = result.strip().split("\n")
+        lines = response_text.strip().split("\n")
         questions = []
 
         for line in lines:
@@ -278,11 +272,11 @@ Now generate 5 follow-up questions:"""
             if cleaned and len(cleaned) > 10:  # Valid question
                 questions.append(cleaned)
 
-        # Return top 5, or default if parsing failed
+        # Return top 5, or use fallback if parsing failed
         if len(questions) >= 3:
             return questions[:5]
         else:
-            # Fallback questions if generation fails
+            print(f"Only got {len(questions)} questions, using fallback")
             return [
                 "Tell me more about that",
                 "What are the specifications?",
@@ -293,7 +287,7 @@ Now generate 5 follow-up questions:"""
 
     except Exception as e:
         print(f"Error generating follow-ups: {e}")
-        # Return generic follow-ups
+        # Return generic follow-ups on error
         return [
             "Can you provide more details?",
             "What are related products?",
