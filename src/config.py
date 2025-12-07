@@ -23,13 +23,13 @@ if not OPENAI_API_KEY:
 print(f"Pinecone API Key: {'Loaded' if PINECONE_API_KEY else 'Missing'}")
 print(f"OpenAI API Key: {'Loaded' if OPENAI_API_KEY else 'Missing'}")
 
-# Set environment variables (required by some libraries)
+# Set environment variables 
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 # PINECONE CONFIGURATION
 
-INDEX_NAME = "sodic-en"  # Your existing index name
+INDEX_NAME = "sodic-en"  #existing index name
 PINECONE_CLOUD = "aws"
 PINECONE_REGION = "us-east-1"
 
@@ -37,7 +37,7 @@ PINECONE_REGION = "us-east-1"
 
 EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 EMBEDDING_DIMENSION = 384
-EMBEDDING_DEVICE = "cpu"  # Change to "cuda" if GPU available
+EMBEDDING_DEVICE = "cpu" 
 
 # Model configuration
 EMBEDDING_MODEL_KWARGS = {
@@ -66,12 +66,12 @@ MAX_CHAT_HISTORY = 10  # Keep last 10 messages (5 Q&A pairs)
 
 # DISPLAY CONFIGURATION
 
-print("\n" + "="*70)
+
 print("SODICK RAG CONFIGURATION")
-print("="*70)
+print("-"*70)
 print(f"Pinecone Index: {INDEX_NAME}")
 print(f"Embedding Model: {EMBEDDING_MODEL_NAME} ({EMBEDDING_DIMENSION}D)")
 print(f"LLM: OpenAI (temp={LLM_TEMPERATURE}, max_tokens={LLM_MAX_TOKENS})")
 print(f"Retrieval: Top-{RETRIEVAL_TOP_K} ({RETRIEVAL_SEARCH_TYPE})")
 print(f"Chat History: Last {MAX_CHAT_HISTORY} messages")
-print("="*70 + "\n")
+print("-"*70 + "\n")

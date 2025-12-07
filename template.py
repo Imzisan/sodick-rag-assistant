@@ -13,13 +13,13 @@ list_of_files = [
     "src/prompt.py",           # Prompt template
     
     # Main application
-    "app.py",                  # Streamlit/Gradio chat interface
+    "app.py",                  # Streamlit
     
     # Setup
     "setup.py",
     "requirements.txt",
     
-    # Research (preserve old work)
+    # Research 
     "research/trials.ipynb",
     "research/old_implementation.ipynb",
 ]
